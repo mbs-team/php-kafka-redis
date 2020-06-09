@@ -10,11 +10,19 @@ RUN printf '[PHP]\ndate.timezone = "%s"\n' '${TIMEZONE}' > /usr/local/etc/php/co
 RUN printf '[PHP]\npost_max_size = "%s"\n' '${MAX_UPLOAD}' > /usr/local/etc/php/conf.d/upload.ini
 RUN printf 'upload_max_filesize = "%s"\n' '${MAX_UPLOAD}' >> /usr/local/etc/php/conf.d/upload.ini
 
+RUN wget https://getcomposer.org/installer -O - -q | php -- --quiet && \
+    mv composer.phar /usr/local/bin/composer
+
+# Increase memory limit
+RUN echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
+
 # Extension dependencies
-RUN apk --no-cache add libffi-dev postgresql-dev zlib-dev icu-dev librdkafka-dev libpng-dev
+RUN apk --no-cache add libffi-dev postgresql-dev zlib-dev icu-dev librdkafka-dev libpng-dev libxml2-dev
+RUN apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ --allow-untrusted gnu-libiconv
+ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
 
 # PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql zip intl hash opcache bcmath pcntl sockets gd
+RUN docker-php-ext-install pdo pdo_pgsql zip intl hash opcache bcmath pcntl sockets gd soap
 
 # PHP PECL extensions
 RUN docker-php-source extract \
